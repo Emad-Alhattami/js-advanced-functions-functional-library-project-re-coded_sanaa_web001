@@ -4,151 +4,161 @@ const fi = (function() {
       return 'Start by reading https://medium.com/javascript-scene/master-the-javascript-interview-what-is-functional-programming-7f218c68b3a0'
     },
 
-    each: function(array, alert) {
-     if (array.length){
-       array.forEach((x) => alert(x))
-     }else
-     {
-       for (const property in array) {
-               alert(array[property])
+    each: function(collection, iteratee) {
+      const newCollection = (collection instanceof Array) ? collection.slice() : Object.values(collection)
+
+      for (let idx = 0; idx < newCollection.length; idx++)
+        iteratee(newCollection[idx])
+      return collection
+    },
+
+    map: function(collection, iteratee) {
+      if (!(collection instanceof Array))
+        collection = Object.values(collection)
+
+      const newArr = []
+      for (let idx = 0; idx < collection.length; idx++)
+        newArr.push(iteratee(collection[idx]))
+      return newArr
+    },
+
+
+		reduce: function(c = [], callback = () => {}, acc) {
+			let collection = c.slice(0)
+
+			if (!acc) {
+				acc = collection[0]
+				collection = collection.slice(1)
+			}
+
+			let len = collection.length;
+
+			for (let i = 0; i < len; i++) {
+				acc = callback(acc, collection[i], collection)
+			}
+			return acc;
+		},
+
+    find: function(collection, predicate) {
+      if (!(collection instanceof Array))
+        collection = Object.values(collection)
+
+      for (let idx = 0; idx < collection.length; idx++)
+        if (predicate(collection[idx])) return collection[idx]
+      return undefined
+    },
+
+    filter: function(collection, predicate) {
+      if (!(collection instanceof Array))
+        collection = Object.values(collection)
+      const newArr = []
+
+      for (let idx = 0; idx < collection.length; idx++)
+        if (predicate(collection[idx])) newArr.push(collection[idx])
+      return newArr
+    },
+
+    size: function(collection) {
+      return (collection instanceof Array) ? collection.length : Object.keys(collection).length
+    },
+
+    first: function(collection, stop=false) {
+      return (stop) ? collection.slice(0, stop) : collection[0]
+    },
+
+    last: function(collection, start=false) {
+      return (start) ? collection.slice(collection.length-start, collection.length) : collection[collection.length-1]
+    },
+
+    compact: function(collection) {
+      const badBad = new Set([false, null, 0, "", undefined, NaN])
+      return collection.filter(el => !badBad.has(el))
+    },
+
+    sortBy: function(collection, callback) {
+      const newArr = [...collection]
+      return newArr.sort(function(a, b) {
+        return callback(a) - callback(b)
+      })
+    },
+
+    unpack: function(receiver, arr) {
+      for (let val of arr)
+        receiver.push(val)
+    },
+
+    flatten: function(collection, shallow, newArr=[]) {
+      if (!Array.isArray(collection)) return newArr.push(collection)
+      if (shallow) {
+        for (let val of collection)
+          Array.isArray(val) ? this.unpack(newArr, val) : newArr.push(val)
+      } else {
+        for (let val of collection) {
+          this.flatten(val, false, newArr)
         }
-     }
-      return array;
-    },
-
-    map: function(array, callback) {
-       if (array.length){
-         return array.map(function (x) { return callback(x)} );
-       }else
-       {
-         let res = [];
-         for (const property in array) {
-            res.push(callback(array[property]));
-          }
-          return res;
-          }
-    },
-
-    reduce: function(collection, callback, acc){
-     if(acc) {
-        return collection.reduce((x,y) => callback(x,y),acc)
-     }else {
-       return collection.reduce((x,y) => callback(x,y))
-     }
-    },
-
-    find: function(collection, prediction){
-      return  collection.find((x) => prediction(x));
-    },
-    filter: function(collection, prediction){
-      return  collection.filter((x) => prediction(x));
-    },
-    size: function(collection){
-      if(collection.length) {
-        return  collection.length
-      }else
-      {
-        let size = 0 ;
-        let key ;
-        for (key in collection) {
-         size += 1;
       }
-        return  size;
+      return newArr
+    },
+
+    uniqSorted: function(collection, iteratee) {
+      const sorted = [collection[0]]
+      for (let idx = 1; idx < collection.length; idx++) {
+        if (sorted[idx-1] !== collection[idx])
+          sorted.push(collection[idx])
       }
+      return sorted
+    },
+
+    uniq: function(collection, sorted=false, iteratee=false) {
+      if (sorted) {
+        return fi.uniqSorted(collection, iteratee)
+      } else if (!iteratee) {
+        return Array.from(new Set(collection))
+      } else {
+        const modifiedVals = new Set()
+        const uniqVals = new Set()
+        for (let val of collection) {
+          const moddedVal = iteratee(val)
+          if (!modifiedVals.has(moddedVal)) {
+            modifiedVals.add(moddedVal)
+            uniqVals.add(val)
+          }
+        }
+        return Array.from(uniqVals)
+      }
+    },
+
+    keys: function(obj) {
+      // Using for loop
+      const keys = []
+      for (let key in obj){
+        keys.push(key)
+      }
+      return keys
+    },
+
+    values: function(obj) {
+      const values = []
+      for (let key in obj){
+        values.push(obj[key])
+      }
+      return values
 
     },
 
+    functions: function(obj) {
+      const functionNames = []
+      
+      for (let key in obj) {
+        if (typeof obj[key] === "function"){
+          functionNames.push(key)
+        }
+      }
+
+      return functionNames.sort()
+    },
 
   }
-  first: function(collection , n){
-          if(n){
-            let result = [];
-            for ( let i = 0 ; i < n ; i++ ) {
-             result.push(collection[i])
-            }
-              return result;
-          }else
-          {
-            return  collection[0];
-          }
-        },
+})()
 
-        last: function(collection , n){
-              if(n){
-                return collection.slice(Math.max(collection.length - n, 0))
-
-              }else
-              {
-                return  collection[collection.length - 1];
-              }
-            },
-
-        compact: function(collection ){
-          return collection.filter(x => !!x)
-          },
-
-      sortBy: function(array, callback){
-
-            return array.slice().sort(function(a, b){return callback(a) - callback(b)});
-        },
-
-        flatten : function (arr, shallow) {
-                if (shallow === true) {
-                  return [].concat(...arr) ;
-                }else  {
-                  while (arr.some((item) => Array.isArray(item))) {
-                     arr = [].concat(...arr)
-                   }
-                   return arr;
-                }
-
-            },
-
-        uniq : function (array, isSorted, callback) {
-          if (isSorted===undefined){
-            function onlyUnique(value, index, self) {
-              return self.indexOf(value) === index;
-              }
-              return  array.filter( onlyUnique );
-          }else{
-            function onlyUnique1(value, index, self) {
-              for(let i = 0; i < index ; i++) {
-                if (callback(value) === callback(self[i])) {
-                  return false
-                  }
-                  }
-                return true ;
-                  }
-                  return  array.filter( onlyUnique1 );
-                }
-            },
-          keys : function (object) {
-             let arr = [] ;
-             for (const property in object)  {
-               arr.push(property) ;
-             }
-            return arr;
-          },
-          values : function (object) {
-             let arr = [] ;
-             for (const property in object)  {
-               arr.push(object[property]) ;
-             }
-            return arr;
-          },
-
-      functions: function(object) {
-              let arr = [] ;
-                for (const property in object)  {
-                if( object[property] === "" ){}else{
-                  arr.push(property) ;
-                }
-
-                }
-                arr.sort();
-                return arr;
-          },
-
-        }
-      })()
 fi.libraryMethod()
